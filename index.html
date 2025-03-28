@@ -235,6 +235,8 @@
             display: block;
             position: relative;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .dropdown > ul {
@@ -251,27 +253,48 @@
             background-color: #1e1f21;
             border-radius: 3px;
             box-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
         }
 
         .dropdown > ul > li {
             display: block;
-            padding: 0.5em 1em;
+            padding: 0.8em 1em;
             background-color: rgba(0, 0, 0, 0);
             color: #f0f0f0;
             cursor: pointer;
+            touch-action: manipulation;
         }
 
         .dropdown > ul > li + li {
             border-top: 2px solid rgba(255, 255, 255, 0.04);
         }
 
-        .dropdown > ul > li:hover {
-            background-color: rgba(0, 0, 0, 0.1);
+        .dropdown > ul > li:hover,
+        .dropdown > ul > li:active {
+            background-color: rgba(0, 0, 0, 0.2);
         }
 
         .dropdown:hover > ul,
-        .dropdown:active > ul {
+        .dropdown:active > ul,
+        .dropdown:focus > ul,
+        .dropdown.active > ul {
             display: block;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .dropdown > ul > li {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+            
+            .dropdown:hover > ul {
+                display: none;
+            }
+            
+            .dropdown.active > ul {
+                display: block;
+            }
         }
 
         /* Header */
@@ -724,9 +747,28 @@
                         return 0;
                     });
                 },
+                initTouchEvents() {
+                    const dropdowns = document.querySelectorAll('.dropdown');
+                    dropdowns.forEach(dropdown => {
+                        dropdown.addEventListener('touchstart', (e) => {
+                            e.preventDefault();
+                            dropdowns.forEach(d => {
+                                if (d !== dropdown) d.classList.remove('active');
+                            });
+                            dropdown.classList.toggle('active');
+                        }, { passive: false });
+                    });
+
+                    document.addEventListener('touchstart', (e) => {
+                        if (!e.target.closest('.dropdown')) {
+                            dropdowns.forEach(d => d.classList.remove('active'));
+                        }
+                    }, { passive: true });
+                },
             },
             mounted() {
                 this.sockInit();
+                this.initTouchEvents();
             },
             destroyed() {
                 this.sockClose();
