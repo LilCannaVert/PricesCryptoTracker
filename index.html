@@ -211,7 +211,7 @@
             flex-direction: row;
             flex-wrap: nowrap;
             align-items: center;
-            padding: 0.7em 1em;
+            padding: 0.5em 0.8em;
             color: #f0f0f0;
             background-color: #2a2b2d;
             border-radius: 100px;
@@ -220,19 +220,32 @@
 
         .form-input.dark {
             background-color: #000000;
+            max-width: 120px;
         }
 
         .form-input > input {
-            width: auto;
+            width: 100%;
+            max-width: 100%;
             -webkit-appearance: none;
             appearance: none;
             outline: none;
             border: none;
+            font-size: inherit;
         }
 
         @media (hover: none) and (pointer: coarse) {
             .form-input > input {
-                font-size: 16px; /* Предотвращает зум на iOS */
+                font-size: 14px;
+            }
+            
+            .form-input.dark {
+                max-width: 100px;
+            }
+        }
+
+        @media only screen and (min-width: 420px) {
+            .form-input.dark {
+                max-width: 150px;
             }
         }
 
@@ -340,10 +353,18 @@
         .header-wrap .header-row {
             height: 4em;
             padding: 1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-wrap .header-row .flex-row {
+            flex-wrap: nowrap;
+            margin-left: auto;
         }
 
         .header-wrap .header-row .dropdown {
-            margin-left: 0.4em;
+            margin-left: 0.3em;
         }
 
         /* Main content */
