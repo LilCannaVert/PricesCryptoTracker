@@ -257,21 +257,25 @@
         }
 
         .dropdown > ul > li {
-            display: block;
+            display: flex;
+            align-items: center;
             padding: 0.8em 1em;
+            min-height: 44px;
             background-color: rgba(0, 0, 0, 0);
             color: #f0f0f0;
             cursor: pointer;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .dropdown > ul > li + li {
             border-top: 2px solid rgba(255, 255, 255, 0.04);
         }
 
-        .dropdown > ul > li:hover,
         .dropdown > ul > li:active {
-            background-color: rgba(0, 0, 0, 0.2);
+            background-color: rgba(0, 0, 0, 0.3);
         }
 
         .dropdown:hover > ul,
@@ -282,10 +286,23 @@
         }
 
         @media (hover: none) and (pointer: coarse) {
+            .dropdown > ul {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                max-width: 100%;
+                border-radius: 12px 12px 0 0;
+                padding: 1em 0;
+                transform: translateY(0);
+                z-index: 1001;
+            }
+            
             .dropdown > ul > li {
-                min-height: 44px;
-                display: flex;
-                align-items: center;
+                padding: 1em;
+                font-size: 16px;
             }
             
             .dropdown:hover > ul {
@@ -749,16 +766,37 @@
                 },
                 initTouchEvents() {
                     const dropdowns = document.querySelectorAll('.dropdown');
+                    
                     dropdowns.forEach(dropdown => {
-                        dropdown.addEventListener('touchstart', (e) => {
+                        const trigger = dropdown.querySelector('.form-input');
+                        const menuItems = dropdown.querySelectorAll('ul > li');
+                        
+                        // Обработка открытия/закрытия меню
+                        trigger.addEventListener('touchstart', (e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             dropdowns.forEach(d => {
                                 if (d !== dropdown) d.classList.remove('active');
                             });
                             dropdown.classList.toggle('active');
                         }, { passive: false });
+
+                        // Обработка выбора пунктов меню
+                        menuItems.forEach(item => {
+                            item.addEventListener('touchstart', (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                // Эмулируем клик для Vue обработчиков
+                                item.click();
+                                
+                                // Закрываем меню после выбора
+                                dropdown.classList.remove('active');
+                            }, { passive: false });
+                        });
                     });
 
+                    // Закрытие при клике вне дропдауна
                     document.addEventListener('touchstart', (e) => {
                         if (!e.target.closest('.dropdown')) {
                             dropdowns.forEach(d => d.classList.remove('active'));
