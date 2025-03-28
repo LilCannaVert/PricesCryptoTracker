@@ -215,6 +215,7 @@
             color: #f0f0f0;
             background-color: #2a2b2d;
             border-radius: 100px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .form-input.dark {
@@ -223,6 +224,16 @@
 
         .form-input > input {
             width: auto;
+            -webkit-appearance: none;
+            appearance: none;
+            outline: none;
+            border: none;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            .form-input > input {
+                font-size: 16px; /* Предотвращает зум на iOS */
+            }
         }
 
         /* Dropdown menu */
@@ -803,10 +814,28 @@
                         }
                     }, { passive: true });
                 },
+                initSearchInput() {
+                    const searchInput = document.querySelector('.form-input.dark input');
+                    
+                    // Обработка нажатия Enter/Return
+                    searchInput.addEventListener('keyup', (e) => {
+                        if (e.key === 'Enter') {
+                            searchInput.blur(); // Убираем фокус с поля ввода
+                        }
+                    });
+
+                    // Обработка нажатия вне поля ввода
+                    document.addEventListener('touchstart', (e) => {
+                        if (!e.target.closest('.form-input.dark')) {
+                            searchInput.blur();
+                        }
+                    }, { passive: true });
+                },
             },
             mounted() {
                 this.sockInit();
                 this.initTouchEvents();
+                this.initSearchInput();
             },
             destroyed() {
                 this.sockClose();
