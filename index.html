@@ -409,6 +409,7 @@
         .main-grid-item.loss .color { color: crimson; }
 
         .main-grid-info {
+            position: relative;
             padding: 1em;
         }
 
@@ -467,29 +468,36 @@
             line-height: normal;
         }
 
-        /* Добавляем стили для кнопки избранного */
+        /* Обновляем стили для кнопки избранного */
         .favorite-btn {
+            position: absolute;
+            top: 0.5em;
+            right: 0.5em;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 24px;
-            height: 24px;
+            width: 32px;
+            height: 32px;
             padding: 0;
-            margin-top: 0.5em;
-            background: transparent;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
             color: #f0f0f0;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 20px;
             opacity: 0.7;
-            transition: opacity 0.3s ease;
+            transition: all 0.3s ease;
+            z-index: 1;
         }
 
-        .favorite-btn:hover {
-            opacity: 1;
-        }
-
+        .favorite-btn:hover,
         .favorite-btn:active {
-            transform: scale(0.95);
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .favorite-btn.active {
+            color: gold;
+            opacity: 1;
         }
     </style>
 </head>
@@ -509,6 +517,17 @@
                     <h1 class="text-nowrap text-condense shadow-text">Crypto 24h Change</h1>
                 </div>
                 <div class="flex-row flex-middle">
+                    <div class="dropdown">
+                        <div class="form-input text-nowrap shadow-box">
+                            <span class="favorite-icon">{{ showOnlyFavorites ? '★' : '☆' }}</span>
+                        </div>
+                        <ul>
+                            <li @click="showOnlyFavorites = !showOnlyFavorites">
+                                <span class="text-faded">Show:</span> 
+                                {{ showOnlyFavorites ? 'All Coins' : 'Favorites' }}
+                            </li>
+                        </ul>
+                    </div>
                     <div class="dropdown">
                         <div class="form-input text-nowrap shadow-box">▼ {{ filterLabel }}</div>
                         <ul>
@@ -555,11 +574,13 @@
             <div class="main-grid-list">
                 <div class="main-grid-item" v-for="c in coinsList" :key="c.symbol" :class="c.style">
                     <div class="main-grid-info flex-row flex-top flex-stretch">
+                        <button class="favorite-btn" 
+                                @click.stop="toggleFavorite(c.symbol)"
+                                :class="{ 'active': isFavorite(c.symbol) }">
+                            {{ isFavorite(c.symbol) ? '★' : '☆' }}
+                        </button>
                         <div class="push-right">
                             <img :src="c.icon" :alt="c.pair" />
-                            <button class="favorite-btn" @click="toggleFavorite(c.symbol)">
-                                {{ isFavorite(c.symbol) ? '★' : '☆' }}
-                            </button>
                         </div>
                         <div class="flex-1 shadow-text">
                             <div class="flex-row flex-top flex-space">
@@ -677,6 +698,7 @@
                 cy: 0,
                 filter: 'all',         // фильтр gainers/losers
                 favorites: [],         // массив избранных пар
+                showOnlyFavorites: false,
             },
             computed: {
                 coinsList() {
@@ -931,7 +953,8 @@
                         sort: this.sort,
                         order: this.order,
                         limit: this.limit,
-                        filter: this.filter
+                        filter: this.filter,
+                        showOnlyFavorites: this.showOnlyFavorites
                     };
                     localStorage.setItem('cryptoPreferences', JSON.stringify(prefs));
                 },
@@ -949,6 +972,7 @@
                         this.order = prefs.order || 'desc';
                         this.limit = prefs.limit || 50;
                         this.filter = prefs.filter || 'all';
+                        this.showOnlyFavorites = prefs.showOnlyFavorites || false;
                     }
                     
                     if (favsStr) {
@@ -970,7 +994,8 @@
                 asset() { this.savePreferences(); },
                 sort() { this.savePreferences(); },
                 order() { this.savePreferences(); },
-                limit() { this.savePreferences(); }
+                limit() { this.savePreferences(); },
+                showOnlyFavorites() { this.savePreferences(); }
             }
         });
     </script>
