@@ -466,6 +466,31 @@
             font-size: 600%;
             line-height: normal;
         }
+
+        /* Добавляем стили для кнопки избранного */
+        .favorite-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            margin-top: 0.5em;
+            background: transparent;
+            color: #f0f0f0;
+            cursor: pointer;
+            font-size: 18px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .favorite-btn:hover {
+            opacity: 1;
+        }
+
+        .favorite-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -484,6 +509,14 @@
                     <h1 class="text-nowrap text-condense shadow-text">Crypto 24h Change</h1>
                 </div>
                 <div class="flex-row flex-middle">
+                    <div class="dropdown">
+                        <div class="form-input text-nowrap shadow-box">▼ {{ filterLabel }}</div>
+                        <ul>
+                            <li @click="setFilter('all')"><span class="text-faded">Filter:</span> All</li>
+                            <li @click="setFilter('gainers')"><span class="text-faded">Filter:</span> Gainers</li>
+                            <li @click="setFilter('losers')"><span class="text-faded">Filter:</span> Losers</li>
+                        </ul>
+                    </div>
                     <div class="dropdown">
                         <div class="form-input text-nowrap shadow-box">▼ {{ limit }}</div>
                         <ul>
@@ -524,6 +557,9 @@
                     <div class="main-grid-info flex-row flex-top flex-stretch">
                         <div class="push-right">
                             <img :src="c.icon" :alt="c.pair" />
+                            <button class="favorite-btn" @click="toggleFavorite(c.symbol)">
+                                {{ isFavorite(c.symbol) ? '★' : '☆' }}
+                            </button>
                         </div>
                         <div class="flex-1 shadow-text">
                             <div class="flex-row flex-top flex-space">
@@ -639,11 +675,25 @@
                 sock: null,            // socket inst
                 cx: 0,
                 cy: 0,
+                filter: 'all',         // фильтр gainers/losers
+                favorites: [],         // массив избранных пар
             },
             computed: {
                 coinsList() {
                     let list = this.coins.slice();
                     let search = this.search.replace(/[^\s\w\-\.]+/g, '').replace(/[\r\s\t\n]+/g, ' ').trim();
+
+                    // Применяем фильтр по изменению цены
+                    if (this.filter === 'gainers') {
+                        list = list.filter(i => i.percent > 0);
+                    } else if (this.filter === 'losers') {
+                        list = list.filter(i => i.percent < 0);
+                    }
+
+                    // Фильтр по избранному
+                    if (this.showOnlyFavorites) {
+                        list = list.filter(i => this.favorites.includes(i.symbol));
+                    }
 
                     if (this.asset) {
                         list = list.filter(i => i.asset === this.asset);
@@ -675,6 +725,13 @@
                         default: return 'Default';
                     }
                 },
+                filterLabel() {
+                    switch (this.filter) {
+                        case 'gainers': return 'Gainers';
+                        case 'losers': return 'Losers';
+                        default: return 'All';
+                    }
+                },
             },
             methods: {
                 sortBy(key, order) {
@@ -687,6 +744,10 @@
                 },
                 setLimit(limit) {
                     this.limit = parseInt(limit) || 0;
+                },
+                setFilter(type) {
+                    this.filter = type;
+                    this.savePreferences();
                 },
                 onSockOpen(e) {
                     this.status = 1;
@@ -852,14 +913,64 @@
                         }
                     }, { passive: true });
                 },
+                toggleFavorite(symbol) {
+                    const index = this.favorites.indexOf(symbol);
+                    if (index === -1) {
+                        this.favorites.push(symbol);
+                    } else {
+                        this.favorites.splice(index, 1);
+                    }
+                    this.saveFavorites();
+                },
+                isFavorite(symbol) {
+                    return this.favorites.includes(symbol);
+                },
+                savePreferences() {
+                    const prefs = {
+                        asset: this.asset,
+                        sort: this.sort,
+                        order: this.order,
+                        limit: this.limit,
+                        filter: this.filter
+                    };
+                    localStorage.setItem('cryptoPreferences', JSON.stringify(prefs));
+                },
+                saveFavorites() {
+                    localStorage.setItem('cryptoFavorites', JSON.stringify(this.favorites));
+                },
+                loadPreferences() {
+                    const prefsStr = localStorage.getItem('cryptoPreferences');
+                    const favsStr = localStorage.getItem('cryptoFavorites');
+                    
+                    if (prefsStr) {
+                        const prefs = JSON.parse(prefsStr);
+                        this.asset = prefs.asset || 'BTC';
+                        this.sort = prefs.sort || 'assetVolume';
+                        this.order = prefs.order || 'desc';
+                        this.limit = prefs.limit || 50;
+                        this.filter = prefs.filter || 'all';
+                    }
+                    
+                    if (favsStr) {
+                        this.favorites = JSON.parse(favsStr);
+                    }
+                }
             },
             mounted() {
                 this.sockInit();
                 this.initTouchEvents();
                 this.initSearchInput();
+                this.loadPreferences(); // Загружаем сохраненные настройки
             },
             destroyed() {
                 this.sockClose();
+            },
+            watch: {
+                // Сохраняем настройки при их изменении
+                asset() { this.savePreferences(); },
+                sort() { this.savePreferences(); },
+                order() { this.savePreferences(); },
+                limit() { this.savePreferences(); }
             }
         });
     </script>
